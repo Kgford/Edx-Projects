@@ -1,93 +1,113 @@
-from flask import Flask, render_template,redirect,url_for,request, session
+from flask import Flask, render_template, redirect, url_for, request, session
+from flask import jsonify
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_login import login_required, logout_user, current_user, login_user
-from .forms import LoginForm, SignupForm
-from .models import db, User
-from . import login_manager
+
+#from .models import db, User
+#from . import login_manager
 
 db = SQLAlchemy()
 login_manager = LoginManager()
-Session(app) = create_app()
+"""Construct the core app object."""
+app = Flask(__name__, instance_relative_config=False)
 
-def create_app():
-    """Construct the core app object."""
-    app = Flask(__name__, instance_relative_config=False))
-    # Application Configuration
-    app.config.from_object('config.Config')
-    # Initialize Plugins
-    db.init_app(app)
-    login_manager.init_app(app)
-	with app.app_context():
-		from . import routes
-		from . import auth
-		from .assets import compile_assets
-		
-		# Register Blueprints
-		app.register_blueprint(routes.main_bp)
-		app.register_blueprint(auth.auth_bp)
-		
-		# Create Database Models
-		db.create_all()
-		
-		# Compile static assets
-		app.config["SESSION_PERMANENT"] = False
-		app.config["SESSION_TYPE"] = "filesystem"
-		if app.config['FLASK_ENV'] == 'development':
-			compile_assets(app)
-		if __name__ == '__main__':
-			app.run(debug=True,host='0.0.0.0', port=8000)
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+
+# Application Configuration
+#app.config.from_object('config.Config')
+
+# Initialize Plugins
+#db.create_all()
+#db.init_app(app)
+#login_manager.init_app(app)
+Session(app)
+print(Session(app))
+if __name__ == '__main__':
+    app.run(debug=True,host='0.0.0.0', port=8000)
+
+
+
+
+
+#with app.app_context():
+#   from . import routes
+ #   from . import auth
+ #   from .assets import compile_assets
+    
+    # Register Blueprints
+#    app.register_blueprint(routes.main_bp)
+#    app.register_blueprint(auth.auth_bp)
+    
+    # Create Database Models
+    #db.create_all()
+    
+    # Compile static assets
+    #app.config["SESSION_PERMANENT"] = False
+    #app.config["SESSION_TYPE"] = "filesystem"
+#    if app.config['FLASK_ENV'] == 'development':
+#        compile_assets(app)
+#    if __name__ == '__main__':
+#        app.run(debug=True,host='0.0.0.0', port=8000)
 				
-		return app
-		
-@app.route('/', methods=['GET', 'POST'])
-def get_operator():
+        
+ 
+@app.route('/')
+def index():
+    index_type = "SIMBA PRO PURCHASE"
+    return render_template("index.html",index_type=index_type)
+    
+    
+     
+@app.route('/ip')
+def get_ip():
     if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
-        Session[user_ip] = jsonify({'ip': request.environ['REMOTE_ADDR']}), 200
+        print(request.environ['REMOTE_ADDR'])
     else:
-        Session[user_ip] = jsonify({'ip': request.environ['HTTP_X_FORWARDED_FOR']}), 200
+        print(request.environ['HTTP_X_FORWARDED_FOR']) # if behind a proxy
+        
+    #if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
+       #user_ip = jsonify({'ip': request.environ['REMOTE_ADDR']}), 200
+    #else:
+         #user_ip = jsonify({'ip': request.environ['HTTP_X_FORWARDED_FOR']}), 200
 		
-	Session[user_status] = get_operator_status(Session[user_ip])
-	if is_authenticated== True:
-        return render_template("index.html")
+    #user_status = get_operator_status(user_ip)
+    #print(user_status)
+     
+    
+@app.route('/simba.html')
+def main_page():
+    return render_template("simba.html")
+
+
 
 		
-# Route for handling the login page logic
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    error = None
-    if request.method == 'POST':
-        if request.form['username'] != 'admin' or request.form['password'] != 'admin':
-            error = 'Invalid Credentials. Please try again.'
-        else:
-            return redirect(url_for('home'))
-    return render_template('login.html', error=error)
-		
+    # Here we use a class of some kind to represent and validate our
+    # client-side form data. For example, WTForms is a library that will
+    # handle this for us, and we use a custom LoginForm to validate.
+    form = LoginForm()
+    if form.validate_on_submit():
+        # Login and validate the user.
+        # user should be an instance of your `User` class
+        login_user(user)
 
-@auth_bp.route('/signup', methods=['GET', 'POST'])
-def signup():
-	"""
-	Sign-up form to create new user accounts.
-	GET: Serve sign-up page.
-	POST: Validate form, create account, redirect user to dashboard.
-	"""
-	form = SignupForm()
-	if form.validate_on_submit():
-		existing_user = User.query.filter_by(email=form.email.data).first()
-		if existing_user is None:
-			user = User(name=form.name.data,email=form.email.data,website=form.website.data)
-			user.set_password(form.password.data)
-			db.session.add(user)
-			db.session.commit() # Create new user
-			login_user(user) # Log in as newly created user
-			return redirect(url_for('main_bp.dashboard'))
-		flash('A user already exists with that email address.')
-	return render_template('signup.jinja2',title='Create an Account.',form=form,		
+        flask.flash('Logged in successfully.')
+
+        next = flask.request.args.get('next')
+        # is_safe_url should check if the url is safe for redirects.
+        # See http://flask.pocoo.org/snippets/62/ for an example.
+        if not is_safe_url(next):
+            return flask.abort(400)
+
+        return flask.redirect(next or flask.url_for('index'))
+    return flask.render_template('login.html', form=form)
 		
-	
-		
-	
+if __name__ == '__main__':
+    app.run(debug=True,host='0.0.0.0', port=8000)
 
 
 @app.route("/hello", methods=["POST"])
@@ -96,5 +116,5 @@ def hello():
     return render_template("hello.html", name=name)
 
 	
-def get_operator_status(ip = ):
+def get_operator_status(ip = True):
     return "UNKNOWN"
